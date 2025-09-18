@@ -192,17 +192,30 @@ function renderPlayers() {
     });
 }
 
-// Arrastre (mouse + touch)
+// Arrastre (mouse + touch) + doble click/tap para editar nombre
 function enablePlayerDrag(playerEl, player) {
     let isDragging = false;
+    let lastTap = 0; // para detectar doble toque en móviles
 
+    // Doble click en PC
     playerEl.addEventListener('dblclick', function(e) {
         e.preventDefault();
         e.stopPropagation();
         editPlayerName(player);
     });
 
-    // Mouse
+    // Doble tap en móvil
+    playerEl.addEventListener('touchend', function(e) {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) { 
+            e.preventDefault();
+            editPlayerName(player);
+        }
+        lastTap = currentTime;
+    });
+
+    // Mouse arrastre
     playerEl.addEventListener('mousedown', function(e) {
         if (currentTool !== 'move') return;
         isDragging = true;
@@ -223,7 +236,7 @@ function enablePlayerDrag(playerEl, player) {
         document.removeEventListener('mouseup', onMouseUp);
     }
 
-    // Touch
+    // Touch arrastre
     playerEl.addEventListener('touchstart', function(e) {
         if (currentTool !== 'move') return;
         isDragging = true;
