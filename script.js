@@ -5,7 +5,6 @@ let isDrawing = false;
 let startX = 0;
 let startY = 0;
 let annotations = [];
-let draggedPlayer = null;
 
 // Jugadores iniciales
 const players = {
@@ -66,6 +65,50 @@ const formations = {
             { x: 820, y: 180 }, { x: 820, y: 250 }, { x: 820, y: 320 },
             { x: 680, y: 150 }, { x: 680, y: 250 }, { x: 680, y: 350 }
         ]
+    },
+    '3-5-2': {
+        home: [
+            { x: 90, y: 250 },
+            { x: 220, y: 170 }, { x: 220, y: 250 }, { x: 220, y: 330 },
+            { x: 380, y: 140 }, { x: 380, y: 200 }, { x: 380, y: 250 }, { x: 380, y: 300 }, { x: 380, y: 360 },
+            { x: 520, y: 220 }, { x: 520, y: 280 }
+        ],
+        away: [
+            { x: 1110, y: 250 },
+            { x: 980, y: 170 }, { x: 980, y: 250 }, { x: 980, y: 330 },
+            { x: 820, y: 140 }, { x: 820, y: 200 }, { x: 820, y: 250 }, { x: 820, y: 300 }, { x: 820, y: 360 },
+            { x: 680, y: 220 }, { x: 680, y: 280 }
+        ]
+    },
+    '5-3-2': {
+        home: [
+            { x: 90, y: 250 },
+            { x: 220, y: 120 }, { x: 220, y: 180 }, { x: 220, y: 250 }, { x: 220, y: 320 }, { x: 220, y: 380 },
+            { x: 380, y: 180 }, { x: 380, y: 250 }, { x: 380, y: 320 },
+            { x: 520, y: 200 }, { x: 520, y: 300 }
+        ],
+        away: [
+            { x: 1110, y: 250 },
+            { x: 980, y: 120 }, { x: 980, y: 180 }, { x: 980, y: 250 }, { x: 980, y: 320 }, { x: 980, y: 380 },
+            { x: 820, y: 180 }, { x: 820, y: 250 }, { x: 820, y: 320 },
+            { x: 680, y: 200 }, { x: 680, y: 300 }
+        ]
+    },
+    '4-2-3-1': {
+        home: [
+            { x: 90, y: 250 },
+            { x: 220, y: 140 }, { x: 220, y: 200 }, { x: 220, y: 300 }, { x: 220, y: 360 },
+            { x: 380, y: 220 }, { x: 380, y: 280 },
+            { x: 520, y: 160 }, { x: 520, y: 250 }, { x: 520, y: 340 },
+            { x: 680, y: 250 }
+        ],
+        away: [
+            { x: 1110, y: 250 },
+            { x: 980, y: 140 }, { x: 980, y: 200 }, { x: 980, y: 300 }, { x: 980, y: 360 },
+            { x: 820, y: 220 }, { x: 820, y: 280 },
+            { x: 680, y: 160 }, { x: 680, y: 250 }, { x: 680, y: 340 },
+            { x: 520, y: 250 }
+        ]
     }
 };
 
@@ -78,7 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Configurar event listeners
 function setupEventListeners() {
-    // Herramientas
     document.querySelectorAll('.tool-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             currentTool = this.getAttribute('data-tool');
@@ -90,7 +132,6 @@ function setupEventListeners() {
         });
     });
 
-    // Equipos
     document.querySelectorAll('.team-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             selectedTeam = this.getAttribute('data-team');
@@ -103,25 +144,20 @@ function setupEventListeners() {
         });
     });
 
-    // Formaciones
     document.getElementById('formation-select').addEventListener('change', function() {
-        if (this.value) {
-            applyFormation(this.value);
-        }
+        if (this.value) applyFormation(this.value);
     });
 
-    // Colores
     document.getElementById('home-color').addEventListener('change', updateColors);
     document.getElementById('away-color').addEventListener('change', updateColors);
 
-    // Campo - eventos de dibujo (mouse)
     const field = document.getElementById('field');
+    // Mouse
     field.addEventListener('mousedown', handleMouseDown);
     field.addEventListener('mousemove', handleMouseMove);
     field.addEventListener('mouseup', handleMouseUp);
     field.addEventListener('mouseleave', handleMouseUp);
-
-    // Campo - eventos de dibujo (touch)
+    // Touch
     field.addEventListener('touchstart', handleTouchStart);
     field.addEventListener('touchmove', handleTouchMove);
     field.addEventListener('touchend', handleTouchEnd);
@@ -150,21 +186,15 @@ function renderPlayers() {
             nameEl.textContent = player.name;
             playerEl.appendChild(nameEl);
 
-            // Eventos de mouse
-            enablePlayerDragMouse(playerEl, player);
-
-            // Eventos táctiles
-            enablePlayerDragTouch(playerEl, player);
-
+            enablePlayerDrag(playerEl, player);
             container.appendChild(playerEl);
         });
     });
 }
 
-// Soporte para arrastre con mouse
-function enablePlayerDragMouse(playerEl, player) {
+// Arrastre (mouse + touch)
+function enablePlayerDrag(playerEl, player) {
     let isDragging = false;
-    let startMouseX, startMouseY, startPlayerX, startPlayerY;
 
     playerEl.addEventListener('dblclick', function(e) {
         e.preventDefault();
@@ -172,77 +202,54 @@ function enablePlayerDragMouse(playerEl, player) {
         editPlayerName(player);
     });
 
+    // Mouse
     playerEl.addEventListener('mousedown', function(e) {
         if (currentTool !== 'move') return;
-        
         isDragging = true;
-        startMouseX = e.clientX;
-        startMouseY = e.clientY;
-        startPlayerX = player.x;
-        startPlayerY = player.y;
-        
         e.preventDefault();
-        e.stopPropagation();
-        
-        document.addEventListener('mousemove', handlePlayerDrag);
-        document.addEventListener('mouseup', handlePlayerDragEnd);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
     });
 
-    function handlePlayerDrag(e) {
+    function onMouseMove(e) {
         if (!isDragging) return;
         const rect = document.getElementById('field').getBoundingClientRect();
-        const deltaX = e.clientX - startMouseX;
-        const deltaY = e.clientY - startMouseY;
-        updatePlayerPosition(player, playerEl, rect, deltaX, deltaY);
+        updatePlayerPositionAbsolute(player, playerEl, rect, e.clientX, e.clientY);
     }
 
-    function handlePlayerDragEnd() {
+    function onMouseUp() {
         isDragging = false;
-        document.removeEventListener('mousemove', handlePlayerDrag);
-        document.removeEventListener('mouseup', handlePlayerDragEnd);
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
     }
-}
 
-// Soporte para arrastre con touch
-function enablePlayerDragTouch(playerEl, player) {
-    let isDragging = false;
-    let startTouchX, startTouchY, startPlayerX, startPlayerY;
-
+    // Touch
     playerEl.addEventListener('touchstart', function(e) {
         if (currentTool !== 'move') return;
-
-        const touch = e.touches[0];
         isDragging = true;
-        startTouchX = touch.clientX;
-        startTouchY = touch.clientY;
-        startPlayerX = player.x;
-        startPlayerY = player.y;
-
         e.preventDefault();
-        document.addEventListener('touchmove', handlePlayerDragTouch);
-        document.addEventListener('touchend', handlePlayerDragEndTouch);
+        document.addEventListener('touchmove', onTouchMove, { passive: false });
+        document.addEventListener('touchend', onTouchEnd);
     });
 
-    function handlePlayerDragTouch(e) {
+    function onTouchMove(e) {
         if (!isDragging) return;
         const touch = e.touches[0];
         const rect = document.getElementById('field').getBoundingClientRect();
-        const deltaX = touch.clientX - startTouchX;
-        const deltaY = touch.clientY - startTouchY;
-        updatePlayerPosition(player, playerEl, rect, deltaX, deltaY);
+        updatePlayerPositionAbsolute(player, playerEl, rect, touch.clientX, touch.clientY);
     }
 
-    function handlePlayerDragEndTouch() {
+    function onTouchEnd() {
         isDragging = false;
-        document.removeEventListener('touchmove', handlePlayerDragTouch);
-        document.removeEventListener('touchend', handlePlayerDragEndTouch);
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
     }
 }
 
 // Actualizar posición de un jugador
-function updatePlayerPosition(player, playerEl, rect, deltaX, deltaY) {
-    const newX = player.x + (deltaX / rect.width) * 1200;
-    const newY = player.y + (deltaY / rect.height) * 500;
+function updatePlayerPositionAbsolute(player, playerEl, rect, clientX, clientY) {
+    const newX = ((clientX - rect.left) / rect.width) * 1200;
+    const newY = ((clientY - rect.top) / rect.height) * 500;
 
     player.x = Math.max(40, Math.min(1160, newX));
     player.y = Math.max(40, Math.min(460, newY));
@@ -261,18 +268,16 @@ function editPlayerName(player) {
     }
 }
 
-// Aplicar formación
+// Aplicar formación solo al equipo seleccionado
 function applyFormation(formationName) {
     const formation = formations[formationName];
     if (!formation) return;
 
-    ['home', 'away'].forEach(team => {
-        formation[team].forEach((pos, index) => {
-            if (players[team][index]) {
-                players[team][index].x = pos.x;
-                players[team][index].y = pos.y;
-            }
-        });
+    formation[selectedTeam].forEach((pos, index) => {
+        if (players[selectedTeam][index]) {
+            players[selectedTeam][index].x = pos.x;
+            players[selectedTeam][index].y = pos.y;
+        }
     });
 
     renderPlayers();
@@ -289,7 +294,7 @@ function updateColors() {
 }
 
 /* =======================
-   EVENTOS DE DIBUJO (mouse)
+   EVENTOS DE DIBUJO
    ======================= */
 function handleMouseDown(e) {
     if (currentTool === 'move') return;
@@ -298,7 +303,7 @@ function handleMouseDown(e) {
     startX = ((e.clientX - rect.left) / rect.width) * 1200;
     startY = ((e.clientY - rect.top) / rect.height) * 500;
 }
-function handleMouseMove() { if (!isDrawing || currentTool === 'move') return; }
+function handleMouseMove() {}
 function handleMouseUp(e) {
     if (!isDrawing || currentTool === 'move') return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -307,10 +312,6 @@ function handleMouseUp(e) {
     addAnnotation(startX, startY, endX, endY, currentTool);
     isDrawing = false;
 }
-
-/* =======================
-   EVENTOS DE DIBUJO (touch)
-   ======================= */
 function handleTouchStart(e) {
     if (currentTool === 'move') return;
     isDrawing = true;
@@ -319,7 +320,7 @@ function handleTouchStart(e) {
     startX = ((touch.clientX - rect.left) / rect.width) * 1200;
     startY = ((touch.clientY - rect.top) / rect.height) * 500;
 }
-function handleTouchMove() { if (!isDrawing || currentTool === 'move') return; }
+function handleTouchMove() {}
 function handleTouchEnd(e) {
     if (!isDrawing || currentTool === 'move') return;
     const rect = document.getElementById('field').getBoundingClientRect();
