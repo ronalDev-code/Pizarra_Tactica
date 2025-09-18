@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pizarra Táctica de Fútbol - RonalDev</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div>
+          <h1>⚽ Pizarra Táctica de Fútbol</h1>
+          <p>Crea formaciones y estrategias profesionales</p>
+        </div>
+        <div class="brand">
+          <h2>RonalDev</h2>
+          <div><small>© 2025 Todos los derechos reservados</small></div>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <h3>🛠️ Herramientas</h3>
+
+          <div class="tools-grid">
+            <button class="tool-btn active" data-tool="move">
+              <span>↔️</span>
+              <span>Mover</span>
+            </button>
+            <button class="tool-btn" data-tool="arrow">
+              <span>➡️</span>
+              <span>Flecha</span>
+            </button>
+            <button class="tool-btn" data-tool="line">
+              <span>—</span>
+              <span>Línea</span>
+            </button>
+            <button class="tool-btn" data-tool="circle">
+              <span>⭕</span>
+              <span>Círculo</span>
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label>Formaciones</label>
+            <select id="formation-select">
+              <option value="">Seleccionar formación</option>
+              <option value="4-4-2">4-4-2</option>
+              <option value="4-3-3">4-3-3</option>
+              <option value="3-5-2">3-5-2</option>
+              <option value="5-3-2">5-3-2</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Equipo Activo</label>
+            <div class="team-buttons">
+              <button class="team-btn home active" data-team="home">
+                Local
+              </button>
+              <button class="team-btn away inactive" data-team="away">
+                Visitante
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Color Equipo Local</label>
+            <input type="color" id="home-color" value="#3b82f6" />
+          </div>
+
+          <div class="form-group">
+            <label>Color Equipo Visitante</label>
+            <input type="color" id="away-color" value="#ef4444" />
+          </div>
+
+          <div class="form-group">
+            <label>💡 Instrucciones</label>
+            <div
+              style="
+                background: #f9fafb;
+                padding: 15px;
+                border-radius: 8px;
+                font-size: 0.8rem;
+                color: #6b7280;
+              "
+            >
+              <p><strong>Mover jugadores:</strong> Arrastra las fichas</p>
+              <p><strong>Cambiar nombres:</strong> Doble click en el jugador</p>
+              <p>
+                <strong>Dibujar tácticas:</strong> Selecciona herramienta y
+                dibuja
+              </p>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button class="action-btn reset-btn" onclick="resetField()">
+              🔄 Reset
+            </button>
+            <button class="action-btn export-btn" onclick="exportField()">
+              💾 Exportar
+            </button>
+          </div>
+        </div>
+
+        <!-- Campo -->
+        <div class="field-container">
+          <div class="field" id="field">
+            <!-- Líneas del campo -->
+            <svg
+              class="field-lines"
+              viewBox="0 0 1200 500"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <g stroke="white" stroke-width="2" fill="none">
+                <rect x="30" y="30" width="1140" height="440" />
+                <line x1="600" y1="30" x2="600" y2="470" />
+                <circle cx="600" cy="250" r="60" />
+                <circle cx="600" cy="250" r="3" fill="white" />
+                <rect x="30" y="130" width="160" height="240" />
+                <rect x="30" y="180" width="80" height="140" />
+                <rect x="1010" y="130" width="160" height="240" />
+                <rect x="1090" y="180" width="80" height="140" />
+                <path
+                  d="M 190 250 m -60,0 a 60,60 0 0,1 0,-120 a 60,60 0 0,1 0,120"
+                />
+                <path
+                  d="M 1010 250 m 60,0 a 60,60 0 0,1 0,120 a 60,60 0 0,1 0,-120"
+                />
+                <circle cx="140" cy="250" r="3" fill="white" />
+                <circle cx="1060" cy="250" r="3" fill="white" />
+                <path d="M 30 30 A 8 8 0 0 0 38 38" />
+                <path d="M 30 470 A 8 8 0 0 1 38 462" />
+                <path d="M 1170 30 A 8 8 0 0 1 1162 38" />
+                <path d="M 1170 470 A 8 8 0 0 0 1162 462" />
+              </g>
+            </svg>
+
+            <!-- Anotaciones -->
+            <svg class="annotations" id="annotations" viewBox="0 0 1200 500">
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="10"
+                  markerHeight="7"
+                  refX="9"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon points="0 0, 10 3.5, 0 7" fill="yellow" />
+                </marker>
+              </defs>
+            </svg>
+
+            <!-- Jugadores -->
+            <div id="players-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <h3>RonalDev</h3>
+        <p>© 2025 RonalDev. Todos los derechos reservados.</p>
+        <p>Pizarra Táctica de Fútbol v1.0</p>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
